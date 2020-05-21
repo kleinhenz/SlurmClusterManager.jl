@@ -11,8 +11,9 @@ struct SlurmManager <: ClusterManager
   launch_timeout::Float64
 
   function SlurmManager(;verbose=false, launch_timeout=60.0)
-    @assert "SLURM_JOBID" in keys(ENV)
-    @assert "SLURM_NTASKS" in keys(ENV)
+    if !("SLURM_JOBID" in keys(ENV) && "SLURM_NTASKS" in keys(ENV))
+      throw(ErrorException("SlurmManager must be constructed inside a slurm allocation environemnt. SLURM_JOBID and SLURM_NTASKS must be defined."))
+    end
 
     jobid = parse(Int, ENV["SLURM_JOBID"])
     ntasks = parse(Int, ENV["SLURM_NTASKS"])
