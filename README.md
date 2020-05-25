@@ -1,5 +1,7 @@
 # SlurmClusterManager.jl
 
+[![Build Status](https://travis-ci.org/kleinhenz/SlurmClusterManager.jl.svg?branch=master)](https://travis-ci.org/kleinhenz/SlurmClusterManager.jl)
+
 This package provides support for using julia within the Slurm cluster environment.
 The code is adapted from [ClusterManagers.jl](https://github.com/JuliaParallel/ClusterManagers.jl) with some modifications.
 
