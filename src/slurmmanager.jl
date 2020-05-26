@@ -4,7 +4,7 @@ ClusterManager for a Slurm allocation
 Represents the resources available within a slurm allocation created by salloc/sbatch.
 The environment variables `SLURM_JOBID` and `SLURM_NTASKS` must be defined to construct this object.
 """
-struct SlurmManager <: ClusterManager 
+struct SlurmManager <: ClusterManager
   jobid::Int
   ntasks::Int
   verbose::Bool
