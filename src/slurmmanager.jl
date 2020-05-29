@@ -4,11 +4,12 @@ ClusterManager for a Slurm allocation
 Represents the resources available within a slurm allocation created by salloc/sbatch.
 The environment variables `SLURM_JOBID` and `SLURM_NTASKS` must be defined to construct this object.
 """
-struct SlurmManager <: ClusterManager
+mutable struct SlurmManager <: ClusterManager
   jobid::Int
   ntasks::Int
   verbose::Bool
   launch_timeout::Float64
+  srun_proc::IO
 
   function SlurmManager(;verbose=false, launch_timeout=60.0)
     if !("SLURM_JOBID" in keys(ENV) && "SLURM_NTASKS" in keys(ENV))
@@ -29,12 +30,12 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
         exeflags = params[:exeflags]
 
         srun_cmd = `srun -D $exehome $exename $exeflags --worker=$(cluster_cookie())`
-        srun_proc = open(srun_cmd)
+        manager.srun_proc = open(srun_cmd)
 
         t = @async for i in 1:manager.ntasks
           manager.verbose && println("connecting to worker $i out of $(manager.ntasks)")
 
-          line = readline(srun_proc)
+          line = readline(manager.srun_proc)
           m = match(r".*:(\d*)#(.*)", line)
           m === nothing && error("could not parse $line")
 
@@ -42,8 +43,6 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
           config.port = parse(Int, m[1])
           config.host = strip(m[2])
 
-          # Keep a reference to the proc, so it's properly closed once the last worker exits.
-          config.userdata = srun_proc
           push!(instances_arr, config)
           notify(c)
         end
@@ -56,9 +55,15 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
         wait(t)
 
         # redirect output
-        @async while !eof(srun_proc)
-          line = readline(srun_proc)
+        @async while !eof(manager.srun_proc)
+          line = readline(manager.srun_proc)
           println(line)
+        end
+
+        # wait to make sure that srun_proc exits before main program to avoid slurm complaining
+        # avoids "Job step aborted: Waiting up to 32 seconds for job step to finish" message
+        finalizer(manager) do manager
+          wait(manager.srun_proc)
         end
 
     catch e
