@@ -1,7 +1,7 @@
 """
 ClusterManager for a Slurm allocation
 
-Represents the resources available within a slurm allocation created by salloc/sbatch.
+Represents the resources available within a slurm allocation created by salloc/sbatch.\\
 The environment variables `SLURM_JOB_ID` or `SLURM_JOBID` and `SLURM_NTASKS` must be defined to construct this object.
 """
 mutable struct SlurmManager <: ClusterManager
@@ -30,7 +30,7 @@ mutable struct SlurmManager <: ClusterManager
     if "SLURM_NTASKS" in keys(ENV)
       ENV["SLURM_NTASKS"]
     else
-      throw("""
+      error("""
             SlurmManager must be constructed inside a slurm environment with a specified number of tasks.
             SLURM_NTASKS must be defined.
             """)
