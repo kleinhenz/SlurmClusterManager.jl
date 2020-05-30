@@ -2,24 +2,44 @@
 ClusterManager for a Slurm allocation
 
 Represents the resources available within a slurm allocation created by salloc/sbatch.
-The environment variables `SLURM_JOBID` and `SLURM_NTASKS` must be defined to construct this object.
+The environment variables `SLURM_JOB_ID` or `SLURM_JOBID` and `SLURM_NTASKS` must be defined to construct this object.
 """
 mutable struct SlurmManager <: ClusterManager
   jobid::Int
   ntasks::Int
   verbose::Bool
   launch_timeout::Float64
-  srun_proc::IO
+  srun_post_exit_sleep::Float64
+  srun_proc
 
-  function SlurmManager(;verbose=false, launch_timeout=60.0)
-    if !("SLURM_JOBID" in keys(ENV) && "SLURM_NTASKS" in keys(ENV))
-      throw(ErrorException("SlurmManager must be constructed inside a slurm allocation environemnt. SLURM_JOBID and SLURM_NTASKS must be defined."))
+  function SlurmManager(;verbose=false, launch_timeout=60.0, srun_post_exit_sleep=0.01)
+
+    jobid =
+    if "SLURM_JOB_ID" in keys(ENV)
+        ENV["SLURM_JOB_ID"]
+    elseif "SLURM_JOBID" in keys(ENV)
+        ENV["SLURM_JOBID"]
+    else
+        error("""
+              SlurmManager must be constructed inside a slurm allocation environemnt.
+              SLURM_JOB_ID or SLURM_JOBID must be defined.
+              """)
+    end
+
+    ntasks =
+    if "SLURM_NTASKS" in keys(ENV)
+      ENV["SLURM_NTASKS"]
+    else
+      throw("""
+            SlurmManager must be constructed inside a slurm environment with a specified number of tasks.
+            SLURM_NTASKS must be defined.
+            """)
     end
 
     jobid = parse(Int, ENV["SLURM_JOBID"])
     ntasks = parse(Int, ENV["SLURM_NTASKS"])
 
-    new(jobid, ntasks, verbose, launch_timeout)
+    new(jobid, ntasks, verbose, launch_timeout, srun_post_exit_sleep, nothing)
   end
 end
 
@@ -64,6 +84,9 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
         # avoids "Job step aborted: Waiting up to 32 seconds for job step to finish" message
         finalizer(manager) do manager
           wait(manager.srun_proc)
+          # need to sleep briefly here to make sure that srun exit is recorded by slurm daemons
+          # TODO find a way to wait on the condition directly instead of just sleeping
+          sleep(manager.srun_post_exit_sleep)
         end
 
     catch e
