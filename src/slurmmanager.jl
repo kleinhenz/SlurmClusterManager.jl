@@ -36,8 +36,8 @@ mutable struct SlurmManager <: ClusterManager
             """)
     end
 
-    jobid = parse(Int, ENV["SLURM_JOBID"])
-    ntasks = parse(Int, ENV["SLURM_NTASKS"])
+    jobid = parse(Int, jobid)
+    ntasks = parse(Int, ntasks)
 
     new(jobid, ntasks, verbose, launch_timeout, srun_post_exit_sleep, nothing)
   end
