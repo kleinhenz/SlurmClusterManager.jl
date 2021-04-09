@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Docker
+        run: |
+          docker version
+          docker-compose version
+          docker build -t slurm-cluster-julia -f ci/Dockerfile .
+          docker-compose -f ci/docker-compose.yml up -d
+          docker ps
+      - name: Test Docker
+        run: |
+          docker exec -t slurmctld pwd
+          docker exec -t slurmctld ls -l
+          docker exec -t slurmctld srun -n 4 hostname
+      - name: Test SlurmClusterManager
+        run: |
+          docker exec -t slurmctld julia -e 'using Pkg; Pkg.build(verbose=true)'
+          docker exec -t slurmctld julia -e 'using Pkg; Pkg.test()'
