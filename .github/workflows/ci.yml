@@ -26,5 +26,4 @@ jobs:
           docker exec -t slurmctld srun -n 4 hostname
       - name: Test SlurmClusterManager
         run: |
-          docker exec -t slurmctld julia -e 'using Pkg; Pkg.build(verbose=true)'
-          docker exec -t slurmctld julia -e 'using Pkg; Pkg.test()'
+          docker exec -t slurmctld julia -e 'import Pkg; Pkg.activate("SlurmClusterManager"); Pkg.test()'
