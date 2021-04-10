@@ -10,19 +10,24 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version:
+          - '1.0.5'
+          - '1.5.4'
+          - '1.6.0'
     steps:
       - uses: actions/checkout@v2
       - name: Setup Docker
         run: |
           docker version
           docker-compose version
-          docker build -t slurm-cluster-julia -f ci/Dockerfile .
+          docker build --build-arg JULIA_VERSION=${{matrix.version}} -t slurm-cluster-julia -f ci/Dockerfile .
           docker-compose -f ci/docker-compose.yml up -d
           docker ps
       - name: Test Docker
         run: |
-          docker exec -t slurmctld pwd
-          docker exec -t slurmctld ls -l
+          docker exec -t slurmctld julia --version
           docker exec -t slurmctld srun -n 4 hostname
       - name: Test SlurmClusterManager
         run: |
