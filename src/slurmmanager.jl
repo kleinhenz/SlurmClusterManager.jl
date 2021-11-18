@@ -49,8 +49,12 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
         exename = params[:exename]
         exeflags = params[:exeflags]
 
-        srun_cmd = `srun -D $exehome $exename $exeflags --worker=$(cluster_cookie())`
-        manager.srun_proc = open(srun_cmd)
+        # Pass cookie as stdin to srun; srun forwards stdin to process
+        # This way the cookie won't be visible in ps, top, etc on the compute node
+        srun_cmd = `srun -D $exehome $exename $exeflags --worker`
+        manager.srun_proc = open(srun_cmd, write=true, read=true)
+        write(manager.srun_proc, cluster_cookie())
+        write(manager.srun_proc, "\n")
 
         t = @async for i in 1:manager.ntasks
           manager.verbose && println("connecting to worker $i out of $(manager.ntasks)")
