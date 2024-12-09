@@ -43,21 +43,54 @@ mutable struct SlurmManager <: ClusterManager
   end
 end
 
+"""
+  By default, workers inherit the environment variables from the master process [implmentation adapted directly from https://github.com/JuliaLang/julia/pull/43270/files]
+"""
 function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Condition)
     try
+        dir = params[:dir]
         exehome = params[:dir]
         exename = params[:exename]
         exeflags = params[:exeflags]
 
+        # TODO: Maybe this belongs in base/initdefs.jl as a package_environment() function
+        #       together with load_path() etc. Might be useful to have when spawning julia
+        #       processes outside of Distributed.jl too.
+        # JULIA_(LOAD|DEPOT)_PATH are used to populate (LOAD|DEPOT)_PATH on startup,
+        # but since (LOAD|DEPOT)_PATH might have changed they are re-serialized here.
+        # Users can opt-out of this by passing `env = ...` to addprocs(...).
+        env = Dict{String,String}(params[:env])
+        pathsep = Sys.iswindows() ? ";" : ":"
+        if get(env, "JULIA_LOAD_PATH", nothing) === nothing
+            env["JULIA_LOAD_PATH"] = join(LOAD_PATH, pathsep)
+        end
+        if get(env, "JULIA_DEPOT_PATH", nothing) === nothing
+            env["JULIA_DEPOT_PATH"] = join(DEPOT_PATH, pathsep)
+        end
+
+        # is this necessary?
+        if !params[:enable_threaded_blas] &&
+          get(env, "OPENBLAS_NUM_THREADS", nothing) === nothing
+           env["OPENBLAS_NUM_THREADS"] = "1"
+        end
+
+       # Set the active project on workers using JULIA_PROJECT.
+       # Users can opt-out of this by (i) passing `env = ...` or (ii) passing
+       # `--project=...` as `exeflags` to addprocs(...).
+       project = Base.ACTIVE_PROJECT[]
+       if project !== nothing && get(env, "JULIA_PROJECT", nothing) === nothing
+           env["JULIA_PROJECT"] = project
+       end
+
         # Pass cookie as stdin to srun; srun forwards stdin to process
         # This way the cookie won't be visible in ps, top, etc on the compute node
         srun_cmd = `srun -D $exehome $exename $exeflags --worker`
-        manager.srun_proc = open(srun_cmd, write=true, read=true)
+        manager.srun_proc = open(setenv(addenv(srun_cmd, env), dir=dir), write=true, read=true)
         write(manager.srun_proc, cluster_cookie())
         write(manager.srun_proc, "\n")
 
         t = @async for i in 1:manager.ntasks
-          manager.verbose && println("connecting to worker $i out of $(manager.ntasks)")
+          manager.verbose && @info "connecting to worker $i out of $(manager.ntasks)"
 
           line = readline(manager.srun_proc)
           m = match(r".*:(\d*)#(.*)", line)
@@ -66,6 +99,8 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
           config = WorkerConfig()
           config.port = parse(Int, m[1])
           config.host = strip(m[2])
+
+          manager.verbose && @info "Worker $i ready on host $(config.host), port $(config.port)"
 
           push!(instances_arr, config)
           notify(c)
