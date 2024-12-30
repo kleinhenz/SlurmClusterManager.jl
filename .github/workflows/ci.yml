@@ -21,9 +21,9 @@ jobs:
       - name: Setup Docker
         run: |
           docker version
-          docker-compose version
+          docker compose version
           docker build --build-arg JULIA_VERSION=${{matrix.version}} -t slurm-cluster-julia -f ci/Dockerfile .
-          docker-compose -f ci/docker-compose.yml up -d
+          docker compose -f ci/docker-compose.yml up -d
           docker ps
       - name: Test Docker
         run: |
