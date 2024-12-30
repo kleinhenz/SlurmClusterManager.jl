@@ -93,9 +93,9 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
           sleep(manager.srun_post_exit_sleep)
         end
 
-    catch e
-        println("Error launching Slurm job:")
-        rethrow(e)
+    catch ex
+        @error "Error launching Slurm job" exception=ex
+        rethrow(ex)
     end
 end
 
