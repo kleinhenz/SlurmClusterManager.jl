@@ -7,9 +7,13 @@ on:
       - master
       - develop
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -21,14 +25,19 @@ jobs:
           - '1.10.7' # current LTS
           - '1.11.2' # currently the latest stable release
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: Setup Docker
         run: |
           docker version
           docker compose version
-          docker build --build-arg JULIA_VERSION=${{matrix.version}} -t slurm-cluster-julia -f ci/Dockerfile .
+          docker build --build-arg JULIA_VERSION="${MATRIX_VERSION:?}" -t slurm-cluster-julia -f ci/Dockerfile .
           docker compose -f ci/docker-compose.yml up -d
           docker ps
+        env:
+          MATRIX_VERSION: ${{matrix.version}}
       - name: Test Docker
         run: |
           docker exec -t slurmctld julia --version
