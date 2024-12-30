@@ -11,11 +11,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         version:
-          - '1.0.5'
-          - '1.5.4'
-          - '1.6.0'
+          # Please note: You must specify the full Julia version number (major.minor.patch).
+          # This is because the value here will be directly interpolated into a download URL.
+          - '1.0.5'  # minimum Julia version supported in Project.toml
+          - '1.6.7'  # previous LTS
+          - '1.10.7' # current LTS
+          - '1.11.2' # currently the latest stable release
     steps:
       - uses: actions/checkout@v2
       - name: Setup Docker
