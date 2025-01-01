@@ -67,6 +67,8 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
           config.port = parse(Int, m[1])
           config.host = strip(m[2])
 
+          @debug "Worker $i ready on host $(config.host), port $(config.port)"
+
           push!(instances_arr, config)
           notify(c)
         end
