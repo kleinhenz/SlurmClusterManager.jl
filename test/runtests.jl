@@ -2,6 +2,13 @@
 
 using Distributed, Test, SlurmClusterManager
 
+const old_JULIA_DEBUG = get(ENV, "JULIA_DEBUG", "")
+if isempty(old_JULIA_DEBUG)
+  ENV["JULIA_DEBUG"] = "SlurmClusterManager"
+else
+  ENV["JULIA_DEBUG"] = old_JULIA_DEBUG * ",SlurmClusterManager"
+end
+
 # test that slurm is available
 @test !(Sys.which("sinfo") === nothing)
 
