@@ -74,11 +74,67 @@ end
 
 function _new_environment_additions(params_env::Dict{String, String})
   env2 = Dict{String, String}()
+  user_did_specify_JULIA_PROJECT = false
+  user_did_specify_JULIA_LOAD_PATH = false
+  user_did_specify_JULIA_DEPOT_PATH = false
+
   for (name, value) in pairs(params_env)
     # For each key-value mapping in `params[:env]`, we respect that mapping and we pass it
     # to the workers.
     env2[name] = value
+
+    # If the user did specify `JULIA_{PROJECT,LOAD_PATH,DEPOT_PATH}` in `params[:env]`, then
+    # we respect that value, and we pass it to the workers.
+    if name == "JULIA_PROJECT"
+      user_did_specify_JULIA_PROJECT = true
+      @debug "The user did specify a value for JULIA_PROJECT in the `env` kwarg to `addprocs()`; that value will be passed to the workers" env2[JULIA_PROJECT]
+    end
+    if name == "JULIA_LOAD_PATH"
+      user_did_specify_JULIA_LOAD_PATH = true
+      @debug "The user did specify a value for JULIA_LOAD_PATH in the `env` kwarg to `addprocs()`; that value will be passed to the workers" env2[JULIA_LOAD_PATH]
+    end
+    if name == "JULIA_DEPOT_PATH"
+      user_did_specify_JULIA_DEPOT_PATH = true
+      @debug "The user did specify a value for JULIA_DEPOT_PATH in the `env` kwarg to `addprocs()`; that value will be passed to the workers" env2[JULIA_DEPOT_PATH]
+    end
   end
+
+  directory_separator = Sys.iswindows ? ';' : ':'
+
+  # If the user did not specify `JULIA_PROJECT` in `params[:env]`, then we pass
+  # JULIA_PROJECT=Base.active_project() to the workers.
+  #
+  # This use case is commonly hit when the user does NOT set the `JULIA_PROJECT` environment
+  # variable but DOES start Julia with either `julia --project` or `julia --project=something`.
+  #
+  # https://github.com/kleinhenz/SlurmClusterManager.jl/issues/16
+  if !user_did_specify_JULIA_PROJECT
+    # Important note: We use  Base.active_project() here.
+    # We do NOT use Base.ACTIVE_PROJECT[], because it is not part of Julia's public API.
+    env2["JULIA_PROJECT"] = Base.active_project()
+    @debug "Passing JULIA_PROJECT=Base.active_project() to the workers" env2["JULIA_PROJECT"]
+  end
+
+  # If the user did not specify `JULIA_LOAD_PATH` in `params[:env]`, then we pass
+  # JULIA_LOAD_PATH=Base.LOAD_PATH to the workers.
+  #
+  # This is a bit of an edge case, and I doubt that most users will need it.
+  # But upstream Distributed.jl does it, so we might as well do it too.
+  if !user_did_specify_JULIA_LOAD_PATH
+    env2["JULIA_LOAD_PATH"] = join(Base.LOAD_PATH, directory_separator)
+    @debug "Passing JULIA_LOAD_PATH=Base.LOAD_PATH to the workers" env2["JULIA_LOAD_PATH"]
+  end
+
+  # If the user did not specify `JULIA_DEPOT_PATH` in `params[:env]`, then we pass
+  # JULIA_DEPOT_PATH=Base.DEPOT_PATH to the workers.
+  #
+  # This is a bit of an edge case, and I doubt that most users will need it.
+  # But upstream Distributed.jl does it, so we might as well do it too.
+  if !user_did_specify_JULIA_DEPOT_PATH
+    env2["JULIA_DEPOT_PATH"] = join(Base.DEPOT_PATH, directory_separator)
+    @debug "Passing JULIA_DEPOT_PATH=Base.DEPOT_PATH to the workers" env2["JULIA_DEPOT_PATH"]
+  end
+
   return env2
 end
 
