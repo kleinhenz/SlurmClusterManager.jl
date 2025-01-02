@@ -43,16 +43,72 @@ mutable struct SlurmManager <: ClusterManager
   end
 end
 
+@static if Base.VERSION >= v"1.9.0"
+  # In Julia 1.9 and later, the no-argument method `Distributed.default_addprocs_params()`
+  # includes :env, so we don't need to do anything.
+  # See also: https://github.com/JuliaLang/julia/blob/v1.9.0/stdlib/Distributed/src/cluster.jl#L526-L541
+
+  Distributed.default_addprocs_params(::SlurmManager) = Distributed.default_addprocs_params()
+elseif v"1.6.0" <= Base.VERSION < v"1.9.0"
+  # In Julia 1.6 through 1.8, the no-argument method `Distributed.default_addprocs_params()`
+  # does not include :env. However, Julia does allow us to add a specialized method
+  # `Distributed.default_addprocs_params(::SlurmManager)`, so we do so here.
+  #
+  # The ability to add the specialized `Distributed.default_addprocs_params(::SlurmManager)`
+  # method was added to Julia in https://github.com/JuliaLang/julia/pull/38570
+  #
+  # See also: https://github.com/JuliaLang/julia/blob/v1.8.0/stdlib/Distributed/src/cluster.jl#L526-L540
+  function Distributed.default_addprocs_params(::SlurmManager)
+    our_stuff = Dict{Symbol,Any}(
+      :env => [],
+    )
+    upstreams_stuff = Distributed.default_addprocs_params()
+    total_stuff = merge(our_stuff, upstreams_stuff)
+    return total_stuff
+  end
+elseif Base.VERSION < v"1.6.0"
+  # In Julia 1.5 and earlier, Julia does not have the `addenv()` function.
+  # I don't want to add a dependency on Compat.jl just for this one feature,
+  # so we will just choose to not support `params[:env]` on Julia 1.5 and earlier.
+end
+
+function _new_environment_additions(params_env::Dict{String, String})
+  env2 = Dict{String, String}()
+  for (name, value) in pairs(params_env)
+    # For each key-value mapping in `params[:env]`, we respect that mapping and we pass it
+    # to the workers.
+    env2[name] = value
+  end
+  return env2
+end
+
 function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Condition)
     try
         exehome = params[:dir]
         exename = params[:exename]
         exeflags = params[:exeflags]
 
+        _srun_cmd_without_env = `srun -D $exehome $exename $exeflags --worker`
+
+        @static if Base.VERSION >= v"1.6.0"
+          env_arr = params[:env]
+          # Pass the key-value pairs from `params[:env]` to the `srun` command:
+          env2 = Dict{String,String}()
+          for (name, value) in pairs(Dict{String,String}(env_arr))
+            env2[name] = value
+          end
+          srun_cmd_with_env = addenv(_srun_cmd_without_env, env2)
+        else
+          # See discussion above for why we don't support this functionality on Julia 1.5 and earlier.
+          if haskey(params, :env)
+            @warn "SlurmClusterManager.jl does not support params[:env] on Julia 1.5 and earlier" Base.VERSION
+          end
+          srun_cmd_with_env = _srun_cmd_without_env
+        end
+
         # Pass cookie as stdin to srun; srun forwards stdin to process
         # This way the cookie won't be visible in ps, top, etc on the compute node
-        srun_cmd = `srun -D $exehome $exename $exeflags --worker`
-        manager.srun_proc = open(srun_cmd, write=true, read=true)
+        manager.srun_proc = open(srun_cmd_with_env, write=true, read=true)
         write(manager.srun_proc, cluster_cookie())
         write(manager.srun_proc, "\n")
 
