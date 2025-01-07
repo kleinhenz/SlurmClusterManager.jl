@@ -1,4 +1,4 @@
-FROM jkleinh/slurm-cluster as base
+FROM jkleinh/slurm-cluster@sha256:afd20dafc831b0fa781460dc871232579ccf1b54955e434531394c331ce388e4 as base
 MAINTAINER Joseph Kleinhenz <jkleinh@umich.edu>
 
 ARG JULIA_VERSION=1.6.0
