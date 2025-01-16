@@ -15,13 +15,16 @@ end
 println("jobid = $jobid")
 
 # get job state from jobid
-getjobstate = jobid -> read(`sacct -j $jobid --format=state --noheader`, String)
+getjobstate = jobid -> begin
+  info = read(`scontrol show $jobid`, String)
+  state = match(r"JobState=(\S*)", info)
+  return state
+end
 
 # wait for job to complete
 status = timedwait(60.0, pollint=1.0) do
   state = getjobstate(jobid)
-  state == "" && return false
-  state = first(split(state)) # don't care about jobsteps
+  state == nothing && return false
   println("jobstate = $state")
   return state == "COMPLETED" || state == "FAILED"
 end
