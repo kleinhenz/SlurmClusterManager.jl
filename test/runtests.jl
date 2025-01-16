@@ -8,6 +8,13 @@ import Test
 # Bring some names into scope, just for convenience:
 using Test: @testset, @test
 
+const original_JULIA_DEBUG = strip(get(ENV, "JULIA_DEBUG", ""))
+if isempty(original_JULIA_DEBUG)
+  ENV["JULIA_DEBUG"] = "SlurmClusterManager"
+else
+  ENV["JULIA_DEBUG"] = original_JULIA_DEBUG * ",SlurmClusterManager"
+end
+
 # test that slurm is available
 @test !(Sys.which("sinfo") === nothing)
 
