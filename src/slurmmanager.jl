@@ -83,7 +83,7 @@ function _new_environment_additions(params_env::Dict{String, String})
     end
   end
 
-  directory_separator = Sys.iswindows ? ';' : ':'
+  directory_separator = Sys.iswindows() ? ';' : ':'
 
   # If the user did not specify `JULIA_PROJECT` in `params[:env]`, then we pass
   # JULIA_PROJECT=Base.active_project() to the workers.
