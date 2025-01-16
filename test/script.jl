@@ -20,7 +20,7 @@ const hosts = map(workers()) do id
   remotecall_fetch(() -> gethostname(), id)
 end
 sort!(hosts)
-println(hosts)
+println("List of hosts: ", hosts)
 
 # We don't use `@assert` here, for reason described above.
 if hosts != ["c1", "c1", "c2", "c2"]
