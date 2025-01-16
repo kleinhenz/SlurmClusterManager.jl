@@ -19,7 +19,7 @@ getjobstate = jobid -> begin
   cmd = Cmd(`scontrol show jobid=$jobid`, ignorestatus=true)
   info = read(cmd, String)
   state = match(r"JobState=(\S*)", info)
-  return isnothing(state) ? nothing : state.captures[1]
+  return state === nothing ? nothing : state.captures[1]
 end
 
 # wait for job to complete
