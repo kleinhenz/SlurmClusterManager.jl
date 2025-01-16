@@ -16,7 +16,7 @@ println("jobid = $jobid")
 
 # get job state from jobid
 getjobstate = jobid -> begin
-  info = read(`scontrol show jobid=$jobid`, String)
+  info = read(Cmd(`scontrol show jobid=$jobid`, ignorestatus=true), String)
   state = match(r"JobState=(\S*)", info)
   return state
 end
