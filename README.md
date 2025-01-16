@@ -1,6 +1,6 @@
 # SlurmClusterManager.jl
 
-![Build Status](https://github.com/kleinhenz/SlurmClusterManager.jl/workflows/CI/badge.svg?branch=master)
+![Build Status](https://github.com/kleinhenz/SlurmClusterManager.jl/workflows/CI/badge.svg)
 
 This package provides support for using julia within the Slurm cluster environment.
 The code is adapted from [ClusterManagers.jl](https://github.com/JuliaParallel/ClusterManagers.jl) with some modifications.
