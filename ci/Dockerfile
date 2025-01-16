@@ -1,7 +1,6 @@
-FROM jkleinh/slurm-cluster@sha256:afd20dafc831b0fa781460dc871232579ccf1b54955e434531394c331ce388e4 as base
-MAINTAINER Joseph Kleinhenz <jkleinh@umich.edu>
+FROM ghcr.io/kleinhenz/docker-slurm-cluster@sha256:c62b169970eaab879898a7df5950f888b0417147e06f8c0e32fd15087b22d9f2
 
-ARG JULIA_VERSION=1.6.0
+ARG JULIA_VERSION=1.11.2
 
 RUN mkdir -p /home/docker/.local/opt/julia \
     && cd /home/docker/.local/opt/julia \
