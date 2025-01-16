@@ -1,6 +1,12 @@
-#!/usr/bin/env julia
+# We don't use `using Foo` here.
+# We either use `using Foo: hello, world`, or we use `import Foo`.
+# https://github.com/JuliaLang/julia/pull/42080
+import SlurmClusterManager
+import Distributed
+import Test
 
-using Distributed, Test, SlurmClusterManager
+# Bring some names into scope, just for convenience:
+using Test: @testset, @test
 
 # test that slurm is available
 @test !(Sys.which("sinfo") === nothing)
