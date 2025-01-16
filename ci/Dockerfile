@@ -1,5 +1,4 @@
-FROM ghcr.io/kleinhenz/docker-slurm-cluster@sha256:ed26ab967e84c955f75499d50ef7a4f844e48d7812de5ef6b64423728d9d10c2 as base
-MAINTAINER Joseph Kleinhenz <jkleinh@umich.edu>
+FROM ghcr.io/kleinhenz/docker-slurm-cluster@sha256:c62b169970eaab879898a7df5950f888b0417147e06f8c0e32fd15087b22d9f2
 
 ARG JULIA_VERSION=1.11.2
 

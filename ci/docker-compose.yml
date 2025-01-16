@@ -1,8 +1,9 @@
-version: "3.3"
-
 services:
   slurmctld:
     image: slurm-cluster-julia
+    build:
+      context: ..
+      dockerfile: ci/Dockerfile
     command: ["slurmctld"]
     container_name: slurmctld
     hostname: slurmctld
