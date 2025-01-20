@@ -34,11 +34,24 @@ end
   # project should point to top level dir so that SlurmClusterManager is available to script.jl
   #
   # Use `sbatch` to submit the Slurm job.
-  # Make sure to propagate `JULIA_PROJECT=Base.active_project()`.
-  # This ensures that SlurmClusterManager.jl, Distributed.jl, and Test.jl are available.
-  project_path = Base.active_project()
-  println("project_path = $project_path")
-  jobid = withenv("JULIA_PROJECT"=>project_path) do
+  # Make sure to propagate `JULIA_PROJECT=SlurmClusterManager/Project.toml`.
+  # This ensures that SlurmClusterManager.jl and Distributed.jl are available.
+  #
+  # We also append SlurmClusterManager/test` to `JULIA_LOAD_PATH`.
+  # This ensures that Test.jl is available.
+  # project_path = Base.active_project()
+
+  directory_separator = Sys.iswindows() ? ';' : ':'
+  SlurmClusterManagerROOTDIR_testdir = @__DIR__                              # ./SlurmClusterManager.jl/test
+  SlurmClusterManagerROOTDIR = dirname(rootdir_testdir)                      # ./SlurmClusterManager.jl
+  SlurmClusterManagerROOTDIR_projecttoml = joinpath(rootdir, "Project.toml") # ./SlurmClusterManager.jl/Project.toml
+  
+  JULIA_PROJECT = abspath(SlurmClusterManagerROOTDIR_projecttoml)            # ./SlurmClusterManager.jl/Project.toml
+  JULIA_LOAD_PATH = abspath(SlurmClusterManagerROOTDIR_testdir)              # ./SlurmClusterManager.jl/test
+
+  @info "" JULIA_PROJECT JULIA_LOAD_PATH
+
+  jobid = withenv("JULIA_PROJECT" => JULIA_PROJECT, "JULIA_LOAD_PATH" => JULIA_LOAD_PATH) do
     strip(read(`sbatch --export=ALL --parsable -n 4 -o test.out script.jl`, String))
   end
   println("jobid = $jobid")
