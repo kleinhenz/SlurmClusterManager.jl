@@ -1,14 +1,3 @@
-const directory_separator = Sys.iswindows() ? ';' : ':'
-@info "" Base.active_project() Base.DEPOT_PATH=join(Base.DEPOT_PATH, directory_separator) Base.LOAD_PATH=join(LOAD_PATH, directory_separator)
-@info "" JULIA_PROJECT=get(ENV, "JULIA_PROJECT", "") JULIA_DEPOT_PATH=get(ENV, "JULIA_DEPOT_PATH", "") JULIA_LOAD_PATH=get(ENV, "JULIA_LOAD_PATH", "")
-
-println(Base.stderr, "# BEGIN contents of project.toml: $(Base.active_project())")
-read(Base.active_project(), String) |> println
-println(Base.stderr, "# END contents of project.toml: $(Base.active_project())")
-
-Base.flush(Base.stdout)
-Base.flush(Base.stderr)
-
 # We don't use `using Foo` here.
 # We either use `using Foo: hello, world`, or we use `import Foo`.
 # https://github.com/JuliaLang/julia/pull/42080
@@ -84,3 +73,6 @@ end
   println(output)
 
 end # testset "SlurmClusterManager.jl"
+
+Base.flush(Base.stdout)
+Base.flush(Base.stderr)
