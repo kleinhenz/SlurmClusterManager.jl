@@ -41,7 +41,7 @@ end
   @test !(Sys.which("sinfo") === nothing)
 
   env_vars = generate_julia_env_vars
-  JULIA_PROJECT) = env_vars.JULIA_PROJECT
+  JULIA_PROJECT = env_vars.JULIA_PROJECT
   JULIA_LOAD_PATH = env_vars.JULIA_LOAD_PATH
   @info "" JULIA_PROJECT JULIA_LOAD_PATH
   
