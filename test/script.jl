@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 
 const directory_separator = Sys.iswindows() ? ';' : ':'
-@info "" Base.active_project() Base.DEPOT_PATH=join(Base.DEPOT_PATH, directory_separator Base.LOAD_PATH=join(LOAD_PATH, directory_separator)
+@info "" Base.active_project() Base.DEPOT_PATH=join(Base.DEPOT_PATH, directory_separator) Base.LOAD_PATH=join(LOAD_PATH, directory_separator)
 @info "" JULIA_PROJECT=get(ENV, "JULIA_PROJECT", "") JULIA_DEPOT_PATH=get(ENV, "JULIA_DEPOT_PATH", "") JULIA_LOAD_PATH=get(ENV, "JULIA_LOAD_PATH", "")
 
 # We don't use `using Foo` here.
