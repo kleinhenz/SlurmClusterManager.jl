@@ -1,5 +1,7 @@
 #!/usr/bin/env julia
 
+@show Base.active_project()
+
 # We don't use `using Foo` here.
 # We either use `using Foo: hello, world`, or we use `import Foo`.
 # https://github.com/JuliaLang/julia/pull/42080
