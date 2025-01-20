@@ -82,7 +82,7 @@ function _new_environment_additions(params_env::Dict{String, String})
   return env2
 end
 
-function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Condition)
+function Distributed.launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Condition)
     try
         exehome = params[:dir]
         exename = params[:exename]
@@ -157,6 +157,6 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Co
     end
 end
 
-function manage(manager::SlurmManager, id::Integer, config::WorkerConfig, op::Symbol)
+function Distributed.manage(manager::SlurmManager, id::Integer, config::WorkerConfig, op::Symbol)
     # This function needs to exist, but so far we don't do anything
 end
