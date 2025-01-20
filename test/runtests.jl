@@ -37,7 +37,10 @@ end
   end
 
   # wait for job to complete
-  status = timedwait(60.0, pollint=1.0) do
+  default_timeout_seconds = 600 # 10 minutes
+  timeout_seconds = parse(Float64, strip(get(ENV, "JULIA_SLURMCLUSTERMANAGER_TEST_TIMEOUT_SECONDS", "$(default_timeout_seconds)")))
+  pollint = 1.0 # 1 second
+  status = timedwait(timeout_seconds, pollint=pollint) do
     state = getjobstate(jobid)
     state == nothing && return false
     @info "jobstate=$(state)"
