@@ -33,9 +33,13 @@ end
 
 # We intentionally do not use `@assert` here.
 # In a future minor release of Julia, `@assert`s may be disabled by default.
-const SLURM_NTASKS = parse(Int, ENV["SLURM_NTASKS"])
+const SLURM_NTASKS = parse(Int, strip(ENV["SLURM_NTASKS"]))
 if nworkers() != SLURM_NTASKS
   msg = "Test failed: nworkers=$(nworkers()) does not match SLURM_NTASKS=$(SLURM_NTASKS)"
+  error(msg)
+end
+if length(workers()) != SLURM_NTASKS
+  msg = "Test failed: length(workers())=$(length(workers())) does not match SLURM_NTASKS=$(SLURM_NTASKS)"
   error(msg)
 end
 
