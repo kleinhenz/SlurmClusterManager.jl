@@ -31,12 +31,12 @@ end
   # project_path = Base.active_project()
 
   directory_separator = Sys.iswindows() ? ';' : ':'
-  SlurmClusterManagerROOTDIR_testdir = @__DIR__                              # ./SlurmClusterManager.jl/test
-  SlurmClusterManagerROOTDIR = dirname(rootdir_testdir)                      # ./SlurmClusterManager.jl
-  SlurmClusterManagerROOTDIR_projecttoml = joinpath(rootdir, "Project.toml") # ./SlurmClusterManager.jl/Project.toml
+  SlurmClusterManagerROOTDIR_testdir = @__DIR__                                                 # ./SlurmClusterManager.jl/test
+  SlurmClusterManagerROOTDIR = dirname(SlurmClusterManagerROOTDIR_testdir)                      # ./SlurmClusterManager.jl
+  SlurmClusterManagerROOTDIR_projecttoml = joinpath(SlurmClusterManagerROOTDIR, "Project.toml") # ./SlurmClusterManager.jl/Project.toml
   
-  JULIA_PROJECT = abspath(SlurmClusterManagerROOTDIR_projecttoml)            # ./SlurmClusterManager.jl/Project.toml
-  JULIA_LOAD_PATH = abspath(SlurmClusterManagerROOTDIR_testdir)              # ./SlurmClusterManager.jl/test
+  JULIA_PROJECT = abspath(SlurmClusterManagerROOTDIR_projecttoml)                               # ./SlurmClusterManager.jl/Project.toml
+  JULIA_LOAD_PATH = abspath(SlurmClusterManagerROOTDIR_testdir)                                 # ./SlurmClusterManager.jl/test
 
   @info "" JULIA_PROJECT JULIA_LOAD_PATH
 
