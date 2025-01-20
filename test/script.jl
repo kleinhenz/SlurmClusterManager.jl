@@ -4,6 +4,9 @@ const directory_separator = Sys.iswindows() ? ';' : ':'
 @info "" Base.active_project() Base.DEPOT_PATH=join(Base.DEPOT_PATH, directory_separator) Base.LOAD_PATH=join(LOAD_PATH, directory_separator)
 @info "" JULIA_PROJECT=get(ENV, "JULIA_PROJECT", "") JULIA_DEPOT_PATH=get(ENV, "JULIA_DEPOT_PATH", "") JULIA_LOAD_PATH=get(ENV, "JULIA_LOAD_PATH", "")
 
+my_pkg = only([x for x in Base.loaded_modules if x[1].name == "Pkg"])[2]
+my_pkg.status()
+
 # We don't use `using Foo` here.
 # We either use `using Foo: hello, world`, or we use `import Foo`.
 # https://github.com/JuliaLang/julia/pull/42080
