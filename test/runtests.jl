@@ -21,7 +21,11 @@ end
   
   # submit job
   # project should point to top level dir so that SlurmClusterManager is available to script.jl
-  project_path = abspath(joinpath(@__DIR__, ".."))
+  #
+  # Use `sbatch` to submit the Slurm job.
+  # Make sure to propagate `JULIA_PROJECT=Base.active_project()`.
+  # This ensures that SlurmClusterManager.jl, Distributed.jl, and Test.jl are available.
+  project_path = Base.active_project()
   println("project_path = $project_path")
   jobid = withenv("JULIA_PROJECT"=>project_path) do
     strip(read(`sbatch --export=ALL --parsable -n 4 -o test.out script.jl`, String))
