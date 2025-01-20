@@ -40,7 +40,7 @@ end
   status = timedwait(60.0, pollint=1.0) do
     state = getjobstate(jobid)
     state == nothing && return false
-    @info "" jobstate=state
+    @info "jobstate=$(state)"
     return state == "COMPLETED" || state == "FAILED"
   end
 
