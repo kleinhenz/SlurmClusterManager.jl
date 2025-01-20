@@ -73,6 +73,3 @@ end
   println(output)
 
 end # testset "SlurmClusterManager.jl"
-
-Base.flush(Base.stdout)
-Base.flush(Base.stderr)
