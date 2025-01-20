@@ -1,3 +1,6 @@
+@info "" Base.active_project() Base.DEPOT_PATH Base.LOAD_PATH
+@info "" get(ENV, "JULIA_PROJECT", "") get(ENV, "JULIA_DEPOT_PATH", "") get(ENV, "JULIA_LOAD_PATH", "")
+
 # We don't use `using Foo` here.
 # We either use `using Foo: hello, world`, or we use `import Foo`.
 # https://github.com/JuliaLang/julia/pull/42080
