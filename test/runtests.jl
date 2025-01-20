@@ -8,6 +8,25 @@ import Test
 # Bring some names into scope, just for convenience:
 using Test: @testset, @test
 
+function generate_JULIA_PROJECT_and_JULIA_LOAD_PATH()
+  # Make sure to propagate `JULIA_PROJECT=SlurmClusterManager/Project.toml`.
+  # This ensures that SlurmClusterManager.jl and Distributed.jl are available.
+  #
+  # We also append SlurmClusterManager/test` to `JULIA_LOAD_PATH`.
+  # This ensures that Test.jl is available.
+
+  directory_separator = Sys.iswindows() ? ';' : ':'
+
+  SlurmClusterManagerROOTDIR_testdir = @__DIR__                                                 # SlurmClusterManager.jl/test
+  SlurmClusterManagerROOTDIR = dirname(SlurmClusterManagerROOTDIR_testdir)                      # SlurmClusterManager.jl
+  SlurmClusterManagerROOTDIR_projecttoml = joinpath(SlurmClusterManagerROOTDIR, "Project.toml") # SlurmClusterManager.jl/Project.toml
+
+  JULIA_PROJECT = SlurmClusterManagerROOTDIR_projecttoml                                        # SlurmClusterManager.jl/Project.toml
+  JULIA_LOAD_PATH = "@$(directory_separator)$(SlurmClusterManagerROOTDIR_testdir)"              # @:SlurmClusterManager.jl/test
+
+  return (; JULIA_PROJECT, JULIA_LOAD_PATH)
+end
+
 const original_JULIA_DEBUG = strip(get(ENV, "JULIA_DEBUG", ""))
 if isempty(original_JULIA_DEBUG)
   ENV["JULIA_DEBUG"] = "SlurmClusterManager"
@@ -22,25 +41,11 @@ end
   # submit job
   # project should point to top level dir so that SlurmClusterManager is available to script.jl
   #
-  # Use `sbatch` to submit the Slurm job.
-  # Make sure to propagate `JULIA_PROJECT=SlurmClusterManager/Project.toml`.
-  # This ensures that SlurmClusterManager.jl and Distributed.jl are available.
-  #
-  # We also append SlurmClusterManager/test` to `JULIA_LOAD_PATH`.
-  # This ensures that Test.jl is available.
-  # project_path = Base.active_project()
-
-  directory_separator = Sys.iswindows() ? ';' : ':'
-  SlurmClusterManagerROOTDIR_testdir = @__DIR__                                                 # SlurmClusterManager.jl/test
-  SlurmClusterManagerROOTDIR = dirname(SlurmClusterManagerROOTDIR_testdir)                      # SlurmClusterManager.jl
-  SlurmClusterManagerROOTDIR_projecttoml = joinpath(SlurmClusterManagerROOTDIR, "Project.toml") # SlurmClusterManager.jl/Project.toml
-  
-  JULIA_PROJECT = SlurmClusterManagerROOTDIR_projecttoml                                        # SlurmClusterManager.jl/Project.toml
-  JULIA_LOAD_PATH = "@$(directory_separator)$(SlurmClusterManagerROOTDIR_testdir)"              # @:SlurmClusterManager.jl/test
-  
-
+  # 
+  (; JULIA_PROJECT, JULIA_LOAD_PATH) = generate_JULIA_PROJECT_and_JULIA_LOAD_PATH()
   @info "" JULIA_PROJECT JULIA_LOAD_PATH
-
+  
+  # Use `sbatch` to submit the Slurm job.
   jobid = withenv("JULIA_PROJECT" => JULIA_PROJECT, "JULIA_LOAD_PATH" => JULIA_LOAD_PATH) do
     strip(read(`sbatch --export=ALL --parsable -n 4 -o test.out script.jl`, String))
   end
