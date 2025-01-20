@@ -1,6 +1,5 @@
 #!/usr/bin/env julia
 
-# TODO: Delete the following line:
 import Test
 
 # We don't use `using Foo` here.
