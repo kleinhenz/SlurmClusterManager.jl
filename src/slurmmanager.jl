@@ -7,12 +7,11 @@ The environment variables `SLURM_JOB_ID` or `SLURM_JOBID` and `SLURM_NTASKS` mus
 mutable struct SlurmManager <: ClusterManager
   jobid::Int
   ntasks::Int
-  verbose::Bool
   launch_timeout::Float64
   srun_post_exit_sleep::Float64
   srun_proc
 
-  function SlurmManager(;verbose=false, launch_timeout=60.0, srun_post_exit_sleep=0.01)
+  function SlurmManager(; launch_timeout=60.0, srun_post_exit_sleep=0.01)
 
     jobid =
     if "SLURM_JOB_ID" in keys(ENV)
@@ -39,7 +38,7 @@ mutable struct SlurmManager <: ClusterManager
     jobid = parse(Int, jobid)
     ntasks = parse(Int, ntasks)
 
-    new(jobid, ntasks, verbose, launch_timeout, srun_post_exit_sleep, nothing)
+    new(jobid, ntasks, launch_timeout, srun_post_exit_sleep, nothing)
   end
 end
 
@@ -122,8 +121,60 @@ function _new_environment_additions(params_env::Dict{String, String})
   return env2
 end
 
+function warn_if_unexpected_params(params::Dict)
+    params_that_we_support = [:dir, :exename, :exeflags]
+    upstreams_defaults = Distributed.default_addprocs_params()
+    for (k, v) in pairs(params)
+        if k == :env
+            # We special-case `:env`, because our support status depends on the Julia version
+            if v == []
+                # Either the user didn't provide the `:env` kwarg,
+                # or the user provided `env=[]`.
+                #
+                # Either way, in this case, we don't print a log message.
+                # @debug "k == :env and v == []" k v
+            else
+                # In this case, the user has provided the `:env` kwarg, and it is nonempty.
+                if Base.VERSION < v"1.6.0"
+                   @warn "The user provided the `env` kwarg, but SlurmClusterManager.jl's support for the `env` kwarg requires Julia 1.6 or later" Base.VERSION
+                else
+                   # Here, the Julia version is >= 1.6, so we do support `:env`,
+                   # and there is no problem.
+                end
+            end
+        elseif k in params_that_we_support
+            # We support this param, so no problem.
+        else
+            # We don't support this param.
+
+            # So let's see if this is something that Distributed.jl would provide by default.
+            if haskey(upstreams_defaults, k)
+                # This is a param that Distributed.jl would provide by default.
+                # So now the question is: is this the default value provided by Distributed.jl,
+                # or did the user override the value?
+                this_is_upstreams_default_value = v == upstreams_defaults[k]
+                if this_is_upstreams_default_value
+                    # So now the question is: is this the default value provided by Distributed.jl,
+                    # This IS the default value provided by Distributed.jl, so we won't print a log message.
+                    # @debug "" k v this_is_upstreams_default_value
+                else
+                   # This is NOT the default value provided by Distributed.jl.
+                   # So the user must have overriden the value.
+                   @warn "SlurmClusterManager.jl does not support this kwarg: $(k)" kwarg=k value=v
+                end
+            else
+                # This is not a param that Distributed.jl provides by default.
+                @warn "SlurmClusterManager.jl does not support this custom kwarg: $(k)" kwarg=k value=v
+            end
+        end
+    end
+    return nothing
+end
+
 function Distributed.launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Condition)
     try
+        warn_if_unexpected_params(params)
+
         exehome = params[:dir]
         exename = params[:exename]
         exeflags = params[:exeflags]
@@ -149,7 +200,7 @@ function Distributed.launch(manager::SlurmManager, params::Dict, instances_arr::
         write(manager.srun_proc, "\n")
 
         t = @async for i in 1:manager.ntasks
-          manager.verbose && println("connecting to worker $i out of $(manager.ntasks)")
+          @debug "connecting to worker $i out of $(manager.ntasks)"
 
           line = readline(manager.srun_proc)
           m = match(r".*:(\d*)#(.*)", line)
