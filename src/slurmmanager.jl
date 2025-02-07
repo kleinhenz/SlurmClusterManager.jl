@@ -7,12 +7,11 @@ The environment variables `SLURM_JOB_ID` or `SLURM_JOBID` and `SLURM_NTASKS` mus
 mutable struct SlurmManager <: ClusterManager
   jobid::Int
   ntasks::Int
-  verbose::Bool
   launch_timeout::Float64
   srun_post_exit_sleep::Float64
   srun_proc
 
-  function SlurmManager(;verbose=false, launch_timeout=60.0, srun_post_exit_sleep=0.01)
+  function SlurmManager(; launch_timeout=60.0, srun_post_exit_sleep=0.01)
 
     jobid =
     if "SLURM_JOB_ID" in keys(ENV)
@@ -39,7 +38,7 @@ mutable struct SlurmManager <: ClusterManager
     jobid = parse(Int, jobid)
     ntasks = parse(Int, ntasks)
 
-    new(jobid, ntasks, verbose, launch_timeout, srun_post_exit_sleep, nothing)
+    new(jobid, ntasks, launch_timeout, srun_post_exit_sleep, nothing)
   end
 end
 
@@ -201,7 +200,7 @@ function Distributed.launch(manager::SlurmManager, params::Dict, instances_arr::
         write(manager.srun_proc, "\n")
 
         t = @async for i in 1:manager.ntasks
-          manager.verbose && println("connecting to worker $i out of $(manager.ntasks)")
+          @debug "connecting to worker $i out of $(manager.ntasks)"
 
           line = readline(manager.srun_proc)
           m = match(r".*:(\d*)#(.*)", line)
