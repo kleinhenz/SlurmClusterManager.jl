@@ -24,7 +24,7 @@ end
   project_path = abspath(joinpath(@__DIR__, ".."))
   @info "" project_path
   jobid = withenv("JULIA_PROJECT"=>project_path) do
-    strip(read(`sbatch --export=ALL --parsable -n 4 -o test.out script.jl`, String))
+    strip(read(`sbatch --export=ALL --parsable -n 4 -o test.out script.bash`, String))
   end
   @info "" jobid
 
