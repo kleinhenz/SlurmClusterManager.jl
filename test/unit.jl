@@ -24,3 +24,16 @@ end
     @test_throws ErrorException SlurmClusterManager.get_slurm_jobid_int()
   end
 end
+
+@testset "warn_if_unexpected_params()" begin
+  if Base.VERSION >= v"1.6"
+    # This test is not relevant for Julia 1.6+
+  else
+    params = Dict(:env => ["foo" => "bar"])
+    SlurmClusterManager.warn_if_unexpected_params(params)
+    @test_logs(
+      (:warn, "The user provided the `env` kwarg, but SlurmClusterManager.jl's support for the `env` kwarg requires Julia 1.6 or later"),
+      SlurmClusterManager.warn_if_unexpected_params(params),
+    )
+  end
+end
