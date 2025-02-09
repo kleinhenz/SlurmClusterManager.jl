@@ -181,7 +181,7 @@ function Distributed.launch(manager::SlurmManager, params::Dict, instances_arr::
 
         _srun_cmd_without_env = `srun -D $exehome $exename $exeflags --worker`
 
-        @static if Base.VERSION >= v"1.6.0"
+        if Base.VERSION >= v"1.6.0"
           # Pass the key-value pairs from `params[:env]` to the `srun` command:
           env2 = _new_environment_additions(Dict{String,String}(params[:env]))
           srun_cmd_with_env = addenv(_srun_cmd_without_env, env2)
