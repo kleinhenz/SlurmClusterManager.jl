@@ -6,7 +6,7 @@ import Distributed
 import Test
 
 # Bring some names into scope, just for convenience:
-using Test: @testset, @test, @test_throws, @test_logs
+using Test: @testset, @test, @test_throws, @test_logs, @test_skip, @test_broken
 
 const original_JULIA_DEBUG = strip(get(ENV, "JULIA_DEBUG", ""))
 if isempty(original_JULIA_DEBUG)
@@ -15,9 +15,20 @@ else
   ENV["JULIA_DEBUG"] = original_JULIA_DEBUG * ",SlurmClusterManager"
 end
 
+include("util.jl")
+
 @testset "SlurmClusterManager.jl" begin
   @testset "Unit tests" begin
     include("unit.jl")
+  end
+
+  @testset "Test some unhappy paths (error paths)" begin
+    @testset "intentionally fail" begin
+      include("error_path_intentionally_fail.jl")
+    end
+    @testset "manager's launch timeout" begin
+      include("error_path_manager_timeout.jl")
+    end
   end
   
   # test that slurm is available
