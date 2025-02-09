@@ -240,7 +240,7 @@ function Distributed.launch(manager::SlurmManager, params::Dict, instances_arr::
 
     catch ex
         @error "Error launching Slurm job" exception=ex
-        rethrow(ex)
+        rethrow()
     end
 end
 
