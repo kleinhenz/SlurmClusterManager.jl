@@ -12,34 +12,38 @@ mutable struct SlurmManager <: ClusterManager
   srun_proc
 
   function SlurmManager(; launch_timeout=60.0, srun_post_exit_sleep=0.01)
-
-    jobid =
-    if "SLURM_JOB_ID" in keys(ENV)
-        ENV["SLURM_JOB_ID"]
-    elseif "SLURM_JOBID" in keys(ENV)
-        ENV["SLURM_JOBID"]
-    else
-        error("""
-              SlurmManager must be constructed inside a slurm allocation environemnt.
-              SLURM_JOB_ID or SLURM_JOBID must be defined.
-              """)
-    end
-
-    ntasks =
-    if "SLURM_NTASKS" in keys(ENV)
-      ENV["SLURM_NTASKS"]
-    else
-      error("""
-            SlurmManager must be constructed inside a slurm environment with a specified number of tasks.
-            SLURM_NTASKS must be defined.
-            """)
-    end
-
-    jobid = parse(Int, jobid)
-    ntasks = parse(Int, ntasks)
+    ntasks = get_slurm_ntasks_int()
+    jobid = get_slurm_jobid_int()
 
     new(jobid, ntasks, launch_timeout, srun_post_exit_sleep, nothing)
   end
+end
+
+function get_slurm_ntasks_int()
+  if haskey(ENV, "SLURM_NTASKS")
+    ntasks_str = ENV["SLURM_NTASKS"]
+  else
+    msg = "SlurmManager must be constructed inside a Slurm allocation environment." *
+          "SLURM_NTASKS must be defined."
+    error(msg)
+  end
+  ntasks_int = parse(Int, ntasks_str)::Int
+  return ntasks_int
+end
+
+function get_slurm_jobid_int()
+  if haskey(ENV, "SLURM_JOB_ID")
+      jobid_str = ENV["SLURM_JOB_ID"]
+  elseif haskey(ENV, "SLURM_JOBID")
+      jobid_str = ENV["SLURM_JOBID"]
+  else
+      msg = "SlurmManager must be constructed inside a Slurm allocation environment." *
+            "SLURM_JOB_ID or SLURM_JOBID must be defined."
+      error(msg)
+  end
+
+  jobid_int = parse(Int, jobid_str)::Int
+  return jobid_int
 end
 
 @static if Base.VERSION >= v"1.9.0"
