@@ -171,31 +171,42 @@ function warn_if_unexpected_params(params::Dict)
     return nothing
 end
 
+@static if Base.VERSION >= v"1.6.0"
+  # Pass the key-value pairs from `params[:env]` to the `srun` command:
+  function construct_srun_cmd(; params::Dict)
+    exehome = params[:dir]
+    exename = params[:exename]
+    exeflags = params[:exeflags]
+    
+    _srun_cmd_without_env = `srun -D $exehome $exename $exeflags --worker`
+
+    env2 = _new_environment_additions(Dict{String,String}(params[:env]))
+    srun_cmd_with_env = addenv(_srun_cmd_without_env, env2)
+
+    return srun_cmd_with_env
+  end
+else
+  # See discussion above for why we don't support this functionality on Julia 1.5 and earlier.
+  function construct_srun_cmd(; params::Dict)
+    exehome = params[:dir]
+    exename = params[:exename]
+    exeflags = params[:exeflags]
+
+    _srun_cmd_without_env = `srun -D $exehome $exename $exeflags --worker`
+
+    return _srun_cmd_without_env
+  end
+end
+
 function Distributed.launch(manager::SlurmManager, params::Dict, instances_arr::Array, c::Condition)
     try
         warn_if_unexpected_params(params)
 
-        exehome = params[:dir]
-        exename = params[:exename]
-        exeflags = params[:exeflags]
-
-        _srun_cmd_without_env = `srun -D $exehome $exename $exeflags --worker`
-
-        @static if Base.VERSION >= v"1.6.0"
-          # Pass the key-value pairs from `params[:env]` to the `srun` command:
-          env2 = _new_environment_additions(Dict{String,String}(params[:env]))
-          srun_cmd_with_env = addenv(_srun_cmd_without_env, env2)
-        else
-          # See discussion above for why we don't support this functionality on Julia 1.5 and earlier.
-          if haskey(params, :env)
-            @warn "SlurmClusterManager.jl does not support params[:env] on Julia 1.5 and earlier" Base.VERSION
-          end
-          srun_cmd_with_env = _srun_cmd_without_env
-        end
+        srun_cmd = construct_srun_cmd(; params=params)
 
         # Pass cookie as stdin to srun; srun forwards stdin to process
         # This way the cookie won't be visible in ps, top, etc on the compute node
-        manager.srun_proc = open(srun_cmd_with_env, write=true, read=true)
+        manager.srun_proc = open(srun_cmd, write=true, read=true)
         write(manager.srun_proc, cluster_cookie())
         write(manager.srun_proc, "\n")
 
