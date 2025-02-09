@@ -46,7 +46,8 @@ jobs:
         run: |
           docker exec -t slurmctld /home/docker/SlurmClusterManager/ci/ci_entrypoint.bash
       - run: find . -type f -name '*.cov'
-      - run: docker exec slurmctld /bin/bash -c 'cd /home/docker/SlurmClusterManager && tar -cf - src/*.cov' | tar -xvf -
+      - name: Copy .cov files out of the Docker container
+        run: docker exec slurmctld /bin/bash -c 'cd /home/docker/SlurmClusterManager && tar -cf - src/*.cov' | tar -xvf -
       - run: find . -type f -name '*.cov'
       # - run: find . -type f -name '*.cov' -exec cat {} \;
       - uses: julia-actions/julia-processcoverage@v1
